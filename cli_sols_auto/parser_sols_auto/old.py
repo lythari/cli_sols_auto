@@ -1,6 +1,8 @@
 from datetime import datetime
 from pathlib import Path
-from .tools import dummyparser
+
+import cli_sols_auto.tools as tools
+from .tools import dummyparser, FileType
 
 
 def parse_sales(line: str, brand: str) -> str:
@@ -29,15 +31,12 @@ def parse_delivery_validation(line: str, brand: str) -> str:
     return f"{brand}-{int(line[:6])};{line[6:26]};{line[26:39]};{int(line[39:44])};{reception_date}"
 
 
-PARSERS = {
-    'VEN': parse_sales,
-    'TRF': parse_traffic,
-    'TRS': parse_interstore_transfer,
-    'VAL': parse_delivery_validation,
-}
+line_parsers = [parse_traffic, parse_interstore_transfer, parse_delivery_validation, parse_sales]
+
+PARSERS = dict(zip([t for t in FileType], line_parsers))
 
 
-def parse(file: Path, file_type: str, brand_code: str) -> str:
+def parse(file: Path, file_type: FileType, brand_code: str) -> str:
     if not file.exists():
         raise RuntimeError("File does not exists.")
     data = file.read_text(encoding='utf-8')
@@ -47,4 +46,6 @@ def parse(file: Path, file_type: str, brand_code: str) -> str:
 
 
 if __name__ == '__main__':
-    print(parse_sales('0000942021103036042770475900010146144-00010001614001', 'OKA'))
+    import doctest
+
+    doctest.testmod()

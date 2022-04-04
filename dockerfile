@@ -8,6 +8,7 @@ COPY requirements.txt requirements.txt
 COPY cli_sols_auto /app/cli_sols_auto
 
 RUN pip3 install -r requirements.txt && mkdir /app/in /app/out
+ENV PYTHONPATH "${PYTHONPATH}:/app"
 
 ENTRYPOINT ["python", "cli_sols_auto/app.py"]
 CMD ["--help"]

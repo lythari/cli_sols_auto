@@ -6,16 +6,16 @@ from typing import List
 import click
 from click.exceptions import BadParameter, NoSuchOption
 
-from parser_sols_auto import new_parser, old_parser
-import tools as tools
-
-PARSE_TYPE = ['VEN', 'TRF', 'TRS', 'VAL']
+from cli_sols_auto.parser_sols_auto import new_parser, old_parser
+import cli_sols_auto.tools as tools
+from cli_sols_auto.parser_sols_auto.tools import FileType
 
 
 @click.group()
 @click.pass_context
 def cli(ctx):
     pass
+
 
 @cli.command()
 @click.option('--output_dir', help='Directory where to output converted files. If ommited outputs in the original '
@@ -49,7 +49,6 @@ def new2old(output_dir, parse_type, verbose, input_files):
     file_list = get_file_list(input_files)
 
     if not len(file_list):
-        tools.logger.fatal(f"No file found in input {input_files}")
         raise BadParameter(f"No file found in input {input_files}")
 
     if output_dir:
@@ -66,8 +65,10 @@ def new2old(output_dir, parse_type, verbose, input_files):
         tools.logger.info(f"output directory is None using {output_directory} instead")
 
     tools.logger.debug(f"Parse_type = {parse_type}")
-    if parse_type not in PARSE_TYPE:
-        print(f"{parse_type} does not exists")
+    try:
+        parse_type = FileType(parse_type)
+    except ValueError:
+        tools.logger.fatal(f"{parse_type} does not exists")
         raise NoSuchOption(f"{parse_type} does not exists")
 
     for file in file_list:
@@ -126,8 +127,10 @@ def old2new(output_dir, parse_type, verbose, input_files, brand_code):
 
     tools.logger.debug(f"Parse_type = {parse_type}")
     tools.logger.debug(f"Brand_code = {brand_code}")
-    if parse_type not in PARSE_TYPE:
-        print(f"{parse_type} does not exists")
+    try:
+        parse_type = FileType(parse_type)
+    except ValueError:
+        tools.logger.fatal(f"{parse_type} does not exists")
         raise NoSuchOption(f"{parse_type} does not exists")
 
     for file in file_list:
@@ -161,42 +164,88 @@ def get_file_list(input_dir: str) -> List[Path]:
     return files
 
 
-def output_file_name_old(file: Path, parse_type: str) -> str:
-    names = {'VEN': 'Sales', 'TRS': 'Transfers', 'TRF': 'Traffic', 'VAL': 'Validation'}
+def output_file_name_old(file_name: str, parse_type: FileType) -> str:
+    """
+        Transform new file name to old style name
+
+        :param file_name: Name of the new file
+        :param parse_type: Type of the file (see enum cli_sols_auto.parse_sols_auto.tools.FileType)
+        :return: old style name
+
+        Exemples :
+        Recognize Sales_*.csv to Ven_*.dat :
+        >>> output_file_name_old("20220101120245_Sales_20012022_1234.csv", FileType("VEN"))
+        'Ven_20012022_1234_....dat'
+
+        Recognize Trf, Trs and Val as well :
+        >>> output_file_name_old("20220101120245_Traffic_20012022_1234.csv", FileType("TRF"))
+        'Trf_20012022_1234_....dat'
+        >>> output_file_name_old("20220101120245_Transfers_20012022_1234.csv", FileType("TRS"))
+        'Trs_20012022_1234_....dat'
+        >>> output_file_name_old("20220101120245_Validation_20012022_1234.csv", FileType("VAL"))
+        'Val_20012022_1234_....dat'
+
+        Is not bothered by prefix value or the size of suffix :
+        >>> output_file_name_old("Traffic_20012022_1234.csv", FileType("TRF"))
+        'Trf_20012022_1234_....dat'
+
+        """
+    names = dict(zip([t for t in FileType], ('Traffic', 'Transfers', 'Validation', 'Sales')))
+
     pattern = f".*{names.get(parse_type, '')}_(.*).csv"
-    suffix = re.match(pattern, file.name).groups()[0]
+    suffix = re.match(pattern, file_name).groups()[0]
     now = datetime.datetime.now()
     return f"{parse_type.title()}_{suffix}_{now.strftime('%Y%m%d%H%M%S%f')}.dat"
 
 
-def output_file_name_new(file: Path, parse_type: str) -> str:
-    names = {'VEN': 'Sales', 'TRS': 'Transfers', 'TRF': 'Traffic', 'VAL': 'Validation'}
+def output_file_name_new(file_name: str, parse_type: FileType) -> str:
+    """
+    Transform old file name to new style name
+
+    :param file_name: Name of the old file
+    :param parse_type: Type of the file (see enum cli_sols_auto.parse_sols_auto.tools.FileType)
+    :return: New name
+
+    Exemples :
+    Recognize Ven_*.dat to Sales_*.csv :
+    >>> output_file_name_new("20220101120245_Ven_20012022_1234.dat", FileType("VEN"))
+    'Sales_20012022_1234_....csv'
+
+    Recognize Trf, Trs and Val as well :
+    >>> output_file_name_new("20220101120245_Trf_20012022_1234.dat", FileType("TRF"))
+    'Traffic_20012022_1234_....csv'
+    >>> output_file_name_new("20220101120245_Trs_20012022_1234.dat", FileType("TRS"))
+    'Transfers_20012022_1234_....csv'
+    >>> output_file_name_new("20220101120245_Val_20012022_1234.dat", FileType("VAL"))
+    'Validation_20012022_1234_....csv'
+
+    Is not bothered by prefix value or the size of suffix :
+    >>> output_file_name_new("Trf_20012022_1234.dat", FileType("TRF"))
+    'Traffic_20012022_1234_....csv'
+    >>> output_file_name_new("Trf_20012022.dat", FileType("TRF"))
+    'Traffic_20012022_....csv'
+    >>> output_file_name_new("Trf_20012022_1234_test_1234_init_MCO.dat", FileType("TRF"))
+    'Traffic_20012022_1234_test_1234_init_MCO_....csv'
+
+    """
+
+    names = dict(zip([t for t in FileType], ('Traffic', 'Transfers', 'Validation', 'Sales')))
+
     pattern = f".*{parse_type.title()}_(.*).dat"
-    suffix = re.match(pattern, file.name).groups()[0]
-    now = datetime.datetime.now()
-    return f"{names.get(parse_type, '').title()}_{suffix}_{now.strftime('%Y%m%d%H%M%S%f')}.csv"
+    suffix = re.match(pattern, file_name).groups()[0]
+
+    now = datetime.datetime.now().strftime('%Y%m%d%H%M%S%f')
+    return f"{names.get(parse_type, '').title()}_{suffix}_{now}.csv"
 
 
-def handle(outdir: Path, file: Path, parse_type: str):
+def handle(outdir: Path, file: Path, parse_type: FileType, brand_code: str = None):
     tools.logger.info(f"handling file {file}")
     tools.logger.info("Running file conversion ...")
-    new_content = new_parser(file, parse_type)
 
-    new_name = output_file_name_old(file, parse_type)
-    tools.logger.debug(f"Generation old file : {new_name}")
+    new_content = old_parser(file, parse_type, brand_code) if brand_code else new_parser(file, parse_type)
+    tools.logger.debug(f"Content generated : {len(new_content)} bytes")
 
-    new_file = outdir / new_name
-    new_file.touch(exist_ok=True)
-    new_file.write_text(new_content)
-    tools.logger.info(f"File outputs : {new_file}")
-
-
-def handle(outdir: Path, file: Path, parse_type: str, brand_code: str):
-    tools.logger.info(f"handling file {file}")
-    tools.logger.info("Running file conversion ...")
-    new_content = old_parser(file, parse_type, brand_code)
-
-    new_name = output_file_name_new(file, parse_type)
+    new_name = output_file_name_new(file.name, parse_type) if brand_code else output_file_name_old(file.name, parse_type)
     tools.logger.debug(f"Generation new file : {new_name}")
 
     new_file = outdir / new_name
@@ -206,4 +255,5 @@ def handle(outdir: Path, file: Path, parse_type: str, brand_code: str):
 
 
 if __name__ == '__main__':
-    cli()
+    import doctest
+    doctest.testmod(verbose=True, optionflags=doctest.ELLIPSIS)

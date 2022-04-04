@@ -1,49 +1,85 @@
 import pytest
 
 
-@pytest.fixture(scope="session")
-def new_ven_file(tmpdir_factory):
-    csv_data = """JAC-778;2022-03-23;14-14-25;4132371;3603652296639;1;395.00;1
-JAC-778;2022-03-23;14-14-25;4132371;3603651617275;1;475.00;1
-JAC-778;2022-03-23;17-04-38;4132373;3603652291740;1;340.00;1
-JAC-778;2022-03-23;17-04-38;4132373;3603652236420;1;340.00;1
-"""
-    fn = tmpdir_factory.mktemp("new").join("Sales_20220101.csv")
+@pytest.fixture(scope="module")
+def tmp_new_dir(tmpdir_factory):
+    return tmpdir_factory.mktemp("new")
+
+
+@pytest.fixture(scope="module")
+def tmp_old_dir(tmpdir_factory):
+    return tmpdir_factory.mktemp("old")
+
+
+@pytest.fixture(scope="module")
+def new_ven_file(tmp_new_dir):
+    csv_data = """JAC-778;2022-03-23;14-14-25;4132371;3603652296639;1;395.00;3
+JAC-778;2022-03-23;14-14-25;4132371;3603651617275;1;475.00;1;JAC-1234
+JAC-778;2022-03-23;17-04-38;4132373;3603652291740;-1;340.00;1;
+JAC-778;2022-03-23;;4132373;3603652236420;1;340;1"""
+    fn = tmp_new_dir.join("Sales_20220101.csv")
     fn.write_text(csv_data, encoding="utf-8")
     return fn
 
 
-@pytest.fixture(scope="session")
-def old_ven_file(tmpdir_factory):
-    dat_data = """0007782022032336036522966390004132371000010000395001
+@pytest.fixture(scope="module")
+def new_ven_file_light(tmp_new_dir):
+    csv_data = """JAC-778;2022-03-23;;4132371;3603652296639;1;395.00;3
+JAC-778;2022-03-23;;4132371;3603651617275;1;475.00;1
+JAC-778;2022-03-23;;4132373;3603652291740;-1;340.00;1
+JAC-778;2022-03-23;;4132373;3603652236420;1;340.00;1"""
+    fn = tmp_new_dir.join("Sales_20220101_light.csv")
+    fn.write_text(csv_data, encoding="utf-8")
+    return fn
+
+
+@pytest.fixture(scope="module")
+def old_ven_file(tmp_old_dir):
+    dat_data = """0007782022032336036522966390004132371000010000395003
 0007782022032336036516172750004132371000010000475001
-0007782022032336036522917400004132373000010000340001
+0007782022032336036522917400004132373-00010000340001
 0007782022032336036522364200004132373000010000340001"""
-    fn = tmpdir_factory.mktemp("old").join("Ven_20220101.dat")
+    fn = tmp_old_dir.join("Ven_20220101.dat")
     fn.write_text(dat_data, encoding="utf-8")
     return fn
 
 
-@pytest.fixture(scope="session")
-def new_val_file(tmpdir_factory):
-    csv_data = """JAC-778;00000999993057074313;3603652341001;2;2021-04-19;16-43-40;
-JAC-778;00000999993057074313;3603652302637;1;2021-04-19;16-47-37;
-JAC-778;00000999993057074313;3603652294130;1;2021-04-19;16-51-37;
-JAC-778;00000999993057074313;3603652247389;2;2021-04-19;16-32-04;
-JAC-778;00000999993057074313;3603652347409;1;2021-04-19;16-35-57;
-JAC-778;00000999993057074313;3603652305409;1;2021-04-19;16-39-52;
-JAC-778;00000999993057074313;3603652320846;1;2021-04-19;16-43-41;
-JAC-778;00000999993057074313;3603652253779;1;2021-04-19;16-47-38;
-JAC-778;00000999993057074313;3603652248867;1;2021-04-19;16-51-40;
-JAC-778;00000999993057074313;3603652258484;1;2021-04-19;16-32-05;
-"""
-    fn = tmpdir_factory.mktemp("new").join("Validation_20220101.csv")
+@pytest.fixture(scope="module")
+def new_val_file(tmp_new_dir):
+    csv_data = """JAC-778;00000999993057074313;3603652341001;2;2021-04-19;16-43-40
+JAC-778;00000999993057074313;3603652302637;1;2021-04-19;16-47-37
+JAC-778;00000999993057074313;3603652294130;1;2021-04-19;16-51-37
+JAC-778;00000999993057074313;3603652247389;2;2021-04-19;16-32-04
+JAC-778;00000999993057074313;3603652347409;1;2021-04-19;16-35-57
+JAC-778;00000999993057074313;3603652305409;1;2021-04-19;
+JAC-778;00000999993057074313;3603652320846;1;2021-04-19;16-43-41
+JAC-778;00000999993057074313;3603652253779;1;2021-04-19
+JAC-778;00000999993057074313;3603652248867;1;2021-04-19;
+JAC-778;00000999993057074313;3603652258484;1;2021-04-19;16-32-05"""
+    fn = tmp_new_dir.join("Validation_20220101.csv")
     fn.write_text(csv_data, encoding="utf-8")
     return fn
 
 
-@pytest.fixture(scope="session")
-def old_val_file(tmpdir_factory):
+@pytest.fixture(scope="module")
+def new_val_file_light(tmp_new_dir):
+    csv_data = """JAC-778;00000999993057074313;3603652341001;2;2021-04-19
+JAC-778;00000999993057074313;3603652302637;1;2021-04-19
+JAC-778;00000999993057074313;3603652294130;1;2021-04-19
+JAC-778;00000999993057074313;3603652247389;2;2021-04-19
+JAC-778;00000999993057074313;3603652347409;1;2021-04-19
+JAC-778;00000999993057074313;3603652305409;1;2021-04-19
+JAC-778;00000999993057074313;3603652320846;1;2021-04-19
+JAC-778;00000999993057074313;3603652253779;1;2021-04-19
+JAC-778;00000999993057074313;3603652248867;1;2021-04-19
+JAC-778;00000999993057074313;3603652258484;1;2021-04-19"""
+    fn = tmp_new_dir.join("Validation_20220101_light.csv")
+    fn.write_text(csv_data, encoding="utf-8")
+    return fn
+
+
+@pytest.fixture(scope="module")
+def old_val_file(tmp_old_dir):
     dat_data = """0007780000099999305707431336036523410010000220210419
 0007780000099999305707431336036523026370000120210419
 0007780000099999305707431336036522941300000120210419
@@ -54,36 +90,46 @@ def old_val_file(tmpdir_factory):
 0007780000099999305707431336036522537790000120210419
 0007780000099999305707431336036522488670000120210419
 0007780000099999305707431336036522584840000120210419"""
-    fn = tmpdir_factory.mktemp("old").join("Val_20220101.dat")
+    fn = tmp_old_dir.join("Val_20220101.dat")
     fn.write_text(dat_data, encoding="utf-8")
     return fn
 
 
-@pytest.fixture(scope="session")
-def new_trf_file(tmpdir_factory):
+@pytest.fixture(scope="module")
+def new_trf_file(tmp_new_dir):
     csv_data = """JAC-778;2022-03-26;8;2
-JAC-778;2022-03-27;82;2
-JAC-778;2022-03-28;18;2
-JAC-778;2022-03-29;12;2
-"""
-    fn = tmpdir_factory.mktemp("new").join("Traffic_20220101.csv")
+JAC-778;2022-03-27;82
+JAC-778;2022-03-28;18;42;1;43
+JAC-778;2022-03-29;12;51"""
+    fn = tmp_new_dir.join("Traffic_20220101.csv")
     fn.write_text(csv_data, encoding="utf-8")
     return fn
 
 
-@pytest.fixture(scope="session")
-def old_trf_file(tmpdir_factory):
+@pytest.fixture(scope="module")
+def new_trf_file_light(tmp_new_dir):
+    csv_data = """JAC-778;2022-03-26;8
+JAC-778;2022-03-27;82
+JAC-778;2022-03-28;18
+JAC-778;2022-03-29;12"""
+    fn = tmp_new_dir.join("Traffic_20220101_light.csv")
+    fn.write_text(csv_data, encoding="utf-8")
+    return fn
+
+
+@pytest.fixture(scope="module")
+def old_trf_file(tmp_old_dir):
     dat_data = """000778202203260008
 000778202203270082
 000778202203280018
 000778202203290012"""
-    fn = tmpdir_factory.mktemp("old").join("Trf_20220101.dat")
+    fn = tmp_old_dir.join("Trf_20220101.dat")
     fn.write_text(dat_data, encoding="utf-8")
     return fn
 
 
-@pytest.fixture(scope="session")
-def new_trs_file(tmpdir_factory):
+@pytest.fixture(scope="module")
+def new_trs_file(tmp_new_dir):
     csv_data = """2021-11-01;11-04-12;OKA-1210;OKA-1889;3604277158289;1
 2021-11-01;11-04-12;OKA-1210;OKA-1889;3604277148709;2
 2021-11-01;11-04-12;OKA-1210;OKA-1889;3604277148631;2
@@ -99,15 +145,37 @@ def new_trs_file(tmpdir_factory):
 2021-11-01;11-04-12;OKA-1210;OKA-1889;3604277181621;1
 2021-11-01;11-04-12;OKA-1210;OKA-1889;3604277996218;4
 2021-11-01;11-04-12;OKA-1210;OKA-1889;3604277127209;1
-2021-11-01;11-04-12;OKA-1210;OKA-1889;3604277148716;1
-"""
-    fn = tmpdir_factory.mktemp("new").join("Transfers_20220101.csv")
+2021-11-01;11-04-12;OKA-1210;OKA-1889;3604277148716;1"""
+    fn = tmp_new_dir.join("Transfers_20220101.csv")
     fn.write_text(csv_data, encoding="utf-8")
     return fn
 
 
-@pytest.fixture(scope="session")
-def old_trs_file(tmpdir_factory):
+@pytest.fixture(scope="module")
+def new_trs_file_light(tmp_new_dir):
+    csv_data = """2021-11-01;;OKA-1210;OKA-1889;3604277158289;1
+2021-11-01;;OKA-1210;OKA-1889;3604277148709;2
+2021-11-01;;OKA-1210;OKA-1889;3604277148631;2
+2021-11-01;;OKA-1210;OKA-1889;3604277996171;3
+2021-11-01;;OKA-1210;OKA-1889;3604277996232;4
+2021-11-01;;OKA-1210;OKA-1889;3604277211410;5
+2021-11-01;;OKA-1210;OKA-1889;3604277211489;3
+2021-11-01;;OKA-1210;OKA-1889;3604277420737;1
+2021-11-01;;OKA-1210;OKA-1889;3604277719855;1
+2021-11-01;;OKA-1210;OKA-1889;3604277148952;1
+2021-11-01;;OKA-1210;OKA-1889;3604277907009;1
+2021-11-01;;OKA-1210;OKA-1889;3604277996195;1
+2021-11-01;;OKA-1210;OKA-1889;3604277181621;1
+2021-11-01;;OKA-1210;OKA-1889;3604277996218;4
+2021-11-01;;OKA-1210;OKA-1889;3604277127209;1
+2021-11-01;;OKA-1210;OKA-1889;3604277148716;1"""
+    fn = tmp_new_dir.join("Transfers_20220101_light.csv")
+    fn.write_text(csv_data, encoding="utf-8")
+    return fn
+
+
+@pytest.fixture(scope="module")
+def old_trs_file(tmp_old_dir):
     dat_data = """2021110100121000188936042771582890001
 2021110100121000188936042771487090002
 2021110100121000188936042771486310002
@@ -124,6 +192,6 @@ def old_trs_file(tmpdir_factory):
 2021110100121000188936042779962180004
 2021110100121000188936042771272090001
 2021110100121000188936042771487160001"""
-    fn = tmpdir_factory.mktemp("old").join("Trs_20220101.dat")
+    fn = tmp_old_dir.join("Trs_20220101.dat")
     fn.write_text(dat_data, encoding="utf-8")
     return fn
